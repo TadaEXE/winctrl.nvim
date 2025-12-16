@@ -1,0 +1,230 @@
+*winctrl.nvim*  Interactive window resize mode with visual hints
+
+==============================================================================
+INTRODUCTION                                                     *winctrl*
+
+winctrl.nvim provides an interactive window resize mode for Neovim.
+
+When activated, it:
+- temporarily remaps keys (by default h/j/k/l)
+- resizes the current window incrementally
+- shows small floating hints indicating available resize directions
+- exits automatically on focus changes or explicit quit keys
+
+==============================================================================
+USAGE                                                           *winctrl-usage*
+
+To start resize mode:
+
+>
+  :WinCtrl
+<
+
+Once active:
+- Resize the current window using the configured keys
+- Floating hints indicate valid resize directions
+- Exit using the configured quit keys or by changing focus
+
+Resize mode automatically stops on:
+- buffer leave
+- window leave
+- entering insert mode
+
+==============================================================================
+DEFAULT KEYMAPS                                                 *winctrl-keys*
+
+By default, the following keys are used while resize mode is active:
+
+  h     Resize window left
+  j     Resize window down
+  k     Resize window up
+  l     Resize window right
+  q     Exit resize mode
+  <Esc> Exit resize mode
+
+These mappings are buffer-local and only active during resize mode.
+
+==============================================================================
+CONFIGURATION                                                   *winctrl-config*
+
+winctrl.nvim is configured via |winctrl.setup()|.
+
+Example:
+
+>
+  require("winctrl").setup({
+    step = 4,
+    border = "rounded",
+    symbols = {
+      up = "▲",
+      down = "▼",
+      left = "◀",
+      right = "▶",
+    },
+    keys = {
+      left = "h",
+      down = "j",
+      up = "k",
+      right = "l",
+      quit = "q",
+      esc = "<Esc>",
+    },
+    notify = true,
+  })
+<
+
+-------------------------------------------------------------------------------
+Configuration fields                                         *winctrl-config-fields*
+
+step                                                        *winctrl-config-step*
+
+Number of columns/rows resized per key press.
+
+Default:
+>
+  step = 4
+<
+
+-------------------------------------------------------------------------------
+
+border                                                      *winctrl-config-border*
+
+Border style used for the floating hint windows.
+
+Accepts any value valid for |nvim_open_win()| 'border':
+- string: "none", "single", "double", "rounded", "solid", "shadow"
+- table: custom border characters
+
+Default:
+>
+  border = "single"
+<
+
+-------------------------------------------------------------------------------
+
+symbols                                                    *winctrl-config-symbols*
+
+Characters displayed inside the floating hint windows.
+
+Fields:
+- up
+- down
+- left
+- right
+
+Default:
+>
+  symbols = {
+    up = "▲",
+    down = "▼",
+    left = "◀",
+    right = "▶",
+  }
+<
+
+-------------------------------------------------------------------------------
+
+keys                                                        *winctrl-config-keys*
+
+Key mappings active during resize mode.
+
+Fields:
+- left
+- right
+- up
+- down
+- quit
+- esc
+
+All values must be strings accepted by |vim.keymap.set()|.
+
+Default:
+>
+  keys = {
+    left = "h",
+    right = "l",
+    up = "k",
+    down = "j",
+    quit = "q",
+    esc = "<Esc>",
+  }
+<
+
+-------------------------------------------------------------------------------
+
+notify                                                    *winctrl-config-notify*
+
+Whether to show a notification when entering resize mode.
+
+If enabled, the message is generated automatically from the configured keys.
+
+Default:
+>
+  notify = true
+<
+
+==============================================================================
+API                                                             *winctrl-api*
+
+winctrl.nvim exposes a small public API.
+
+-------------------------------------------------------------------------------
+winctrl.setup({config})                                      *winctrl.setup()*
+
+Initialize winctrl.nvim.
+
+This must be called once before using |winctrl.start()|.
+Lazy.nvim users typically call this via `opts`.
+
+-------------------------------------------------------------------------------
+winctrl.start([{opts}])                                      *winctrl.start()*
+
+Start resize mode.
+
+Optional fields:
+- step: override the configured step size for this invocation
+
+Example:
+
+>
+  require("winctrl").start({ step = 2 })
+<
+
+-------------------------------------------------------------------------------
+winctrl.stop()                                                *winctrl.stop()*
+
+Exit resize mode immediately and remove all hints and mappings.
+
+-------------------------------------------------------------------------------
+winctrl.config()                                              *winctrl.config()*
+
+Return the resolved configuration table.
+
+==============================================================================
+COMMANDS                                                       *winctrl-commands*
+
+:WinCtrl                                                      *:WinCtrl*
+
+Start resize mode.
+
+==============================================================================
+NOTES                                                           *winctrl-notes*
+
+- Floating hints are purely visual and do not capture input.
+- Resize mode never affects floating windows.
+- Keymaps are buffer-local and cleaned up on exit.
+- The plugin avoids global state pollution.
+
+==============================================================================
+LICENSE                                                         *winctrl-license*
+
+MIT License.
+
+==============================================================================
+AUTHOR                                                          *winctrl-author*
+
+winctrl.nvim is written by TadaEXE and most likely maintained by no one.
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl
+
