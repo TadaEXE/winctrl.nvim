@@ -73,51 +73,119 @@ local function get_win_rect(win)
 	}
 end
 
+---@param cur integer
+---@param side '"left"'|'"right"'
+---@return integer|nil
+local function nearest_adjacent_win_h(cur, side)
+  local cur_rect = get_win_rect(cur)
+
+  local best_win = nil
+  local best_dist = nil
+
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if win ~= cur then
+      local wcfg = vim.api.nvim_win_get_config(win)
+      if wcfg.relative == "" then
+        local r = get_win_rect(win)
+
+        local vertical_overlap = not (r.bottom < cur_rect.top or r.top > cur_rect.bottom)
+        if vertical_overlap then
+          if side == "right" and r.left > cur_rect.right then
+            local dist = r.left - cur_rect.right
+            if best_dist == nil or dist < best_dist then
+              best_dist = dist
+              best_win = win
+            end
+          elseif side == "left" and r.right < cur_rect.left then
+            local dist = cur_rect.left - r.right
+            if best_dist == nil or dist < best_dist then
+              best_dist = dist
+              best_win = win
+            end
+          end
+        end
+      end
+    end
+  end
+
+  return best_win
+end
+
+---@param cur integer
+---@param side '"up"'|'"down"'
+---@return integer|nil
+local function nearest_adjacent_win_v(cur, side)
+  local cur_rect = get_win_rect(cur)
+
+  local best_win = nil
+  local best_dist = nil
+
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if win ~= cur then
+      local wcfg = vim.api.nvim_win_get_config(win)
+      if wcfg.relative == "" then
+        local r = get_win_rect(win)
+
+        local horizontal_overlap = not (r.right < cur_rect.left or r.left > cur_rect.right)
+        if horizontal_overlap then
+          if side == "down" and r.top > cur_rect.bottom then
+            local dist = r.top - cur_rect.bottom
+            if best_dist == nil or dist < best_dist then
+              best_dist = dist
+              best_win = win
+            end
+          elseif side == "up" and r.bottom < cur_rect.top then
+            local dist = cur_rect.top - r.bottom
+            if best_dist == nil or dist < best_dist then
+              best_dist = dist
+              best_win = win
+            end
+          end
+        end
+      end
+    end
+  end
+
+  return best_win
+end
+
 ---@return boolean, boolean, boolean, boolean
 local function compute_neighbors()
-	local cur = vim.api.nvim_get_current_win()
-	local cfg_cur = vim.api.nvim_win_get_config(cur)
-	if cfg_cur.relative ~= "" then
-		return false, false, false, false
-	end
+  local cur = vim.api.nvim_get_current_win()
+  local cfg_cur = vim.api.nvim_win_get_config(cur)
+  if cfg_cur.relative ~= "" then
+    return false, false, false, false
+  end
 
-	local cur_rect = get_win_rect(cur)
+  local left_win = nearest_adjacent_win_h(cur, "left")
+  local right_win = nearest_adjacent_win_h(cur, "right")
 
-	local has_left = false
-	local has_right = false
-	local has_up = false
-	local has_down = false
+  local can_left = false
+  local can_right = false
 
-	for _, win in ipairs(vim.api.nvim_list_wins()) do
-		if win ~= cur then
-			local wcfg = vim.api.nvim_win_get_config(win)
-			if wcfg.relative == "" then
-				local r = get_win_rect(win)
+  if left_win and vim.api.nvim_win_is_valid(left_win) then
+    can_left = not vim.wo[left_win].winfixwidth
+  end
 
-				local vertical_overlap = not (r.bottom < cur_rect.top or r.top > cur_rect.bottom)
-				if vertical_overlap then
-					if r.right < cur_rect.left then
-						has_left = true
-					end
-					if r.left > cur_rect.right then
-						has_right = true
-					end
-				end
+  if right_win and vim.api.nvim_win_is_valid(right_win) then
+    can_right = not vim.wo[right_win].winfixwidth
+  end
 
-				local horizontal_overlap = not (r.right < cur_rect.left or r.left > cur_rect.right)
-				if horizontal_overlap then
-					if r.bottom < cur_rect.top then
-						has_up = true
-					end
-					if r.top > cur_rect.bottom then
-						has_down = true
-					end
-				end
-			end
-		end
-	end
+  local can_up = false
+  local can_down = false
 
-	return has_left, has_right, has_up, has_down
+  local up_win = nearest_adjacent_win_v(cur, "up")
+  local down_win = nearest_adjacent_win_v(cur, "down")
+
+  if up_win and vim.api.nvim_win_is_valid(up_win) then
+    can_up = not vim.wo[up_win].winfixheight
+  end
+
+  if down_win and vim.api.nvim_win_is_valid(down_win) then
+    can_down = not vim.wo[down_win].winfixheight
+  end
+
+  return can_left, can_right, can_up, can_down
 end
 
 local function show_floats()
